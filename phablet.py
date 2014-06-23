@@ -210,7 +210,7 @@ class Phablet:
         self._purge_known_hosts_entry()
         self._copy_ssh_key(key)
 
-    def cmdline(self, cmd):
+    def ssh_cmdline(self, cmd):
         """
         Get argument list for meth:`subprocess.Popen()`.
 
@@ -245,6 +245,7 @@ class Phablet:
         ssh_cmd.extend(cmd)
         return ssh_cmd
 
+    cmdline = ssh_cmdline
     def _invoke_adb(self, cmd, *args, **kwargs):
         env = os.environ
         if self._serial is not None:
