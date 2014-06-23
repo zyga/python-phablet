@@ -250,6 +250,45 @@ class Phablet:
 
     cmdline = ssh_cmdline
 
+    def rsync_cmdline(self, src, dest, *rsync_options):
+        """
+        Get argument list for meth:`subprocess.Popen()` to run rsync.
+
+        :param src:
+            source file or directory
+        :param dest:
+            destination file or directory
+        :param rsync_options:
+            any additional arguments to pass to rsync, useful if you
+            want to pass '-a'
+        :returns:
+            argument list to pass as the first argument to subprocess.Popen()
+
+        .. note::
+            you must call :meth:`connect()` at least once
+            before calling this method.
+
+        This method returns the ``args`` argument (first argument) to
+        subprocess.Popen() required to rsync something over to the phablet
+        device. You can use it to construct your own connections, to intercept
+        command output or to setup any additional things that you may require.
+
+        .. versionadded:: 0.2
+        """
+        if not all(isinstance(item, str) for item in rsync_options):
+            raise TypeError("cmd needs to be a list of strings")
+        if self._port is None:
+            raise ProgrammingError("run connect() first")
+        ssh_cmd = ['ssh']
+        for opt in self._get_ssh_options():
+            ssh_cmd.append('-o')
+            ssh_cmd.append(opt)
+        rsync_cmd = ['rsync', '-e', ' '.join(ssh_cmd),
+                     str(src), 'phablet@localhost:{}'.format(dest)]
+        rsync_cmd.extend(rsync_options)
+        _logger.debug("rsync_cmdline %s->%s (with %r) => %r",
+                      src, dest, rsync_options, rsync_cmd)
+        return rsync_cmd
     def _check_call(self, *args, **kwargs):
         kwargs_display = dict(kwargs)
         if 'env' in kwargs_display:
