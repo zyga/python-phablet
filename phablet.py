@@ -286,8 +286,8 @@ class Phablet:
         rsync_cmd = ['rsync', '-e', ' '.join(ssh_cmd),
                      str(src), 'phablet@localhost:{}'.format(dest)]
         rsync_cmd.extend(rsync_options)
-        _logger.debug("rsync_cmdline %s->%s (with %r) => %r",
-                      src, dest, rsync_options, rsync_cmd)
+        _logger.debug("rsync_cmdline %r-> %r (with %s) => %r",
+                      src, dest, ' '.join(rsync_options), rsync_cmd)
         return rsync_cmd
 
     def push(self, src, dest, timeout=None, key=None):
