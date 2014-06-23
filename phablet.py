@@ -289,6 +289,26 @@ class Phablet:
         _logger.debug("rsync_cmdline %s->%s (with %r) => %r",
                       src, dest, rsync_options, rsync_cmd)
         return rsync_cmd
+
+    def push(self, src, dest, timeout=None, key=None):
+        """
+        Push (synchronize) some data onto the phablet device
+
+        :param src:
+            source file or directory
+        :param dest:
+            destination file or directory
+        :param timeout:
+            a timeout (in seconds) for device discovery
+        :param key:
+            a path to a public ssh key to use for connection
+        :returns:
+            the exit code of the command
+        """
+        self.connect(timeout, key)
+        return self._check_call(
+            self.rsync_cmdline(src, dest, '-a'))
+
     def _check_call(self, *args, **kwargs):
         kwargs_display = dict(kwargs)
         if 'env' in kwargs_display:
