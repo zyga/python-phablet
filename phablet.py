@@ -205,6 +205,8 @@ class Phablet:
 
         .. versionadded:: 0.2
         """
+        if self.port is not None:
+            return
         self._wait_for_device(timeout)
         self._setup_port_forwarding()
         self._purge_known_hosts_entry()
