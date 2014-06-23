@@ -214,10 +214,10 @@ class Phablet:
 
     def ssh_cmdline(self, cmd):
         """
-        Get argument list for meth:`subprocess.Popen()`.
+        Get argument list for meth:`subprocess.Popen()` to run ssh.
 
         :param cmd:
-            a list of strings to execute as a command
+            a list of arguments to pass to ssh
         :returns:
             argument list to pass as the first argument to subprocess.Popen()
 
