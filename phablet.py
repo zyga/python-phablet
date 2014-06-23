@@ -118,6 +118,15 @@ class NoPublicKeysFound(PhabletError):
         return _("No public ssh keys found on the local account")
 
 
+class ProgrammingError(PhabletError):
+    """
+    Exception raised if the API is used incorrectly.
+    """
+
+    def __str__(self):
+        return _("Programming error: {0}").format(self.args)
+
+
 class Phablet:
     """
     Pythonic interface to the Ubuntu Phablet
@@ -165,16 +174,76 @@ class Phablet:
             a path to a public ssh key to use for connection
         :returns:
             the exit code of the command
+
+        This method will not allow you to capture stdout/stderr from the target
+        process. If you wish to do that please consider switching to one of
+        subprocess functions along with. :meth:`cmdline()`.
         """
         if not isinstance(cmd, list):
             raise TypeError("cmd needs to be a list")
         if not all(isinstance(item, str) for item in cmd):
             raise TypeError("cmd needs to be a list of strings")
+        self.connect(timeout, key)
+        return self._run_ssh(cmd)
+
+    def connect(self, timeout=None, key=None):
+        """
+        Perform one-time setup procedure.
+
+        :param timeout:
+            a timeout (in seconds) for device discovery
+        :param key:
+            a path to a public ssh key to use for connection
+
+        This method will allow you to execute :meth:`cmdline()`
+        repeatedly without incurring the extra overhead of the setup procedure.
+
+        Note that this procedure needs to be repeated whenever:
+        - the target device reboots
+        - the local adb server is restarted
+        - your ssh keys change
+
+        .. versionadded:: 0.2
+        """
         self._wait_for_device(timeout)
         self._setup_port_forwarding()
         self._purge_known_hosts_entry()
         self._copy_ssh_key(key)
-        return self._run_ssh(cmd)
+
+    def cmdline(self, cmd):
+        """
+        Get argument list for meth:`subprocess.Popen()`.
+
+        :param cmd:
+            a list of strings to execute as a command
+        :returns:
+            argument list to pass as the first argument to subprocess.Popen()
+
+        .. note::
+            you must call :meth:`connect()` at least once
+            before calling this method.
+
+        This method returns the ``args`` argument (first argument) to
+        subprocess.Popen() required to execute the specified command on the
+        phablet device. You can use it to construct your own connections, to
+        intercept command output or to setup any additional things that you may
+        require.
+
+        .. versionadded:: 0.2
+        """
+        if not isinstance(cmd, list):
+            raise TypeError("cmd needs to be a list")
+        if not all(isinstance(item, str) for item in cmd):
+            raise TypeError("cmd needs to be a list of strings")
+        if self._port is None:
+            raise ProgrammingError("run connect() first")
+        ssh_cmd = ['ssh']
+        for opt in self._get_ssh_options():
+            ssh_cmd.append('-o')
+            ssh_cmd.append(opt)
+        ssh_cmd.extend(['phablet@localhost', '--'])
+        ssh_cmd.extend(cmd)
+        return ssh_cmd
 
     def _invoke_adb(self, cmd, *args, **kwargs):
         env = os.environ
@@ -276,14 +345,7 @@ class Phablet:
             raise UnableToCopySSHKey
 
     def _run_ssh(self, cmd):
-        assert self._port is not None
-        ssh_cmd = ['ssh']
-        for opt in self._get_ssh_options():
-            ssh_cmd.append('-o')
-            ssh_cmd.append(opt)
-        ssh_cmd.extend(['phablet@localhost', '--'])
-        ssh_cmd.extend(cmd)
-        return subprocess.call(ssh_cmd)
+        return subprocess.call(self.cmdline(cmd))
 
     def _get_ssh_options(self):
         return [
