@@ -249,6 +249,28 @@ class Phablet:
         return ssh_cmd
 
     cmdline = ssh_cmdline
+
+    def _check_call(self, *args, **kwargs):
+        kwargs_display = dict(kwargs)
+        if 'env' in kwargs_display:
+            del kwargs_display['env']
+        _logger.debug("check_call: %r %r", args, kwargs_display)
+        return subprocess.check_call(*args, **kwargs)
+
+    def _check_output(self, *args, **kwargs):
+        kwargs_display = dict(kwargs)
+        if 'env' in kwargs:
+            del kwargs_display['env']
+        _logger.debug("check_output: %r %r", args, kwargs_display)
+        return subprocess.check_output(*args, **kwargs)
+
+    def _call(self, *args, **kwargs):
+        kwargs_display = dict(kwargs)
+        if 'env' in kwargs_display:
+            del kwargs_display['env']
+        _logger.debug("call: %r %r", args, kwargs_display)
+        return subprocess.call(*args, **kwargs)
+
     def _invoke_adb(self, cmd, *args, **kwargs):
         env = os.environ
         if self._serial is not None:
