@@ -486,6 +486,33 @@ class RemoteTemporaryDirectory:
             self.phablet.ssh_cmdline(['rm', '-rf', self.dirname]))
 
 
+class SynchronizedDirectory:
+    """
+    A context manager for creating a temporary copy of a local directory
+    remotely
+
+    Example synchronizing data to a (random, temporary) directory:
+
+        with SynchronizedDirectory('/usr/bin', phablet) as dirname:
+            phablet.run(os.path.join(dirname, 'false'))
+
+    .. versionadded:: 0.2
+    """
+
+    def __init__(self, dirname, phablet):
+        self.phablet = phablet
+        self.dirname = dirname
+        self.remote_tmpdir = RemoteTemporaryDirectory(phablet)
+
+    def __enter__(self):
+        remote_dirname = self.remote_tmpdir.__enter__()
+        self.phablet.push(self.dirname, remote_dirname)
+        return remote_dirname
+
+    def __exit__(self, *args):
+        self.remote_tmpdir.__exit__()
+
+
 def main(args=None):
     """
     Phablet command line user interface
