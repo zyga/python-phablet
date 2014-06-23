@@ -306,6 +306,7 @@ class Phablet:
             the exit code of the command
         """
         self.connect(timeout, key)
+        _logger.info("Pushing %r to %r", src, dest)
         return self._check_call(
             self.rsync_cmdline(src, dest, '-a'))
 
@@ -469,6 +470,8 @@ class RemoteTemporaryDirectory:
             The directory is only created when this object is used as a context
             manager.
         """
+        if not isinstance(phablet, Phablet):
+            raise TypeError("phablet")
         self.dirname = None
         self.phablet = phablet
 
@@ -500,6 +503,8 @@ class SynchronizedDirectory:
     """
 
     def __init__(self, dirname, phablet):
+        if not isinstance(phablet, Phablet):
+            raise TypeError("phablet")
         self.phablet = phablet
         self.dirname = dirname
         self.remote_tmpdir = RemoteTemporaryDirectory(phablet)
