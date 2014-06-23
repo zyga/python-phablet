@@ -416,9 +416,10 @@ class RemoteTemporaryDirectory:
     def __enter__(self):
         if self.phablet.port is None:
             self.phablet.connect()
-        self.dirname = subprocess.check_output(
-            self.phablet.cmdline(['mktemp', '-d', '--quiet']),
-            universal_newlines=True)
+        self.dirname = self.phablet._check_output(
+            self.phablet.ssh_cmdline(['mktemp', '-d', '--quiet']),
+            universal_newlines=True
+        ).splitlines()[0]
         return self.dirname
 
     def __exit__(self, *args):
