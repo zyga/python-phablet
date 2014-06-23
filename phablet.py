@@ -245,6 +245,7 @@ class Phablet:
             ssh_cmd.append(opt)
         ssh_cmd.extend(['phablet@localhost', '--'])
         ssh_cmd.extend(cmd)
+        _logger.debug("ssh_cmdline %r => %r", cmd, ssh_cmd)
         return ssh_cmd
 
     cmdline = ssh_cmdline
