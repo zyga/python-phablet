@@ -359,6 +359,48 @@ class Phablet:
         ]
 
 
+class RemoteTemporaryDirectory:
+    """
+    A context manager for creating a temporary directory on a phablet device.
+
+    Example copying a script to a temporary directory on the phablet::
+
+        with RemoteTemporaryDirectory(phablet) as dirname:
+            phablet.sync('script',  dirname)
+            phablet.run(os.path.join(dirname, 'script'))
+
+    .. versionadded:: 0.2
+    """
+
+    def __init__(self, phablet):
+        """
+        Initialize the remote temporary directory
+
+        :param phablet:
+            a Phablet instance. May be disconnected, it will be connected to if
+            necessary. If you want to handle custom connection timeout or key
+            settings please call phablet.connect() earlier.
+
+        .. note::
+            The directory is only created when this object is used as a context
+            manager.
+        """
+        self.dirname = None
+        self.phablet = phablet
+
+    def __enter__(self):
+        if self.phablet.port is None:
+            self.phablet.connect()
+        self.dirname = subprocess.check_output(
+            self.phablet.cmdline(['mktemp', '-d', '--quiet']),
+            universal_newlines=True)
+        return self.dirname
+
+    def __exit__(self, *args):
+        subprocess.check_call(
+            self.phablet.cmdline(['rm', '-rf', self.dirname]))
+
+
 def main(args=None):
     """
     Phablet command line user interface
