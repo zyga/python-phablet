@@ -275,8 +275,7 @@ class Phablet:
         env = os.environ
         if self._serial is not None:
             env['ANDROID_SERIAL'] = self._serial
-        _logger.debug("Invoking adb: %r", cmd)
-        return subprocess.check_call(
+        return self._check_call(
             cmd, *args, env=env, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, **kwargs)
 
@@ -314,7 +313,7 @@ class Phablet:
         _logger.info("Setting up port forwarding")
         for port in range(2222, 2299):
             try:
-                subprocess.check_call([
+                self._check_call([
                     'adb', 'forward', 'tcp:{0}'.format(port), 'tcp:22'])
             except subprocess.CalledProcessError:
                 continue
@@ -329,7 +328,7 @@ class Phablet:
         _logger.info("Purging ~/.ssh/known_hosts entry")
         try:
             _logger.debug
-            subprocess.check_call([
+            self._check_call([
                 'ssh-keygen', '-f', os.path.expanduser('~/.ssh/known_hosts'),
                 '-R', '[localhost]:{0}'.format(self._port)],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -371,7 +370,7 @@ class Phablet:
             raise UnableToCopySSHKey
 
     def _run_ssh(self, cmd):
-        return subprocess.call(self.cmdline(cmd))
+        return self._call(self.cmdline(cmd))
 
     def _get_ssh_options(self):
         return [
@@ -423,8 +422,8 @@ class RemoteTemporaryDirectory:
         return self.dirname
 
     def __exit__(self, *args):
-        subprocess.check_call(
-            self.phablet.cmdline(['rm', '-rf', self.dirname]))
+        self.phablet._check_call(
+            self.phablet.ssh_cmdline(['rm', '-rf', self.dirname]))
 
 
 def main(args=None):
