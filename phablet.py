@@ -367,7 +367,10 @@ class Phablet:
             return
         _logger.info("Starting ssh on the device")
         try:
-            self._invoke_adb(['adb', 'shell', 'start', 'ssh'])
+            self._invoke_adb(['adb', 'shell', (
+                'gdbus call -y -d com.canonical.PropertyService'
+                ' -o /com/canonical/PropertyService'
+                ' -m com.canonical.PropertyService.SetProperty ssh true')])
         except subprocess.CalledProcessError:
             raise UnableToStartSSH
         _logger.info("Setting up port forwarding")
